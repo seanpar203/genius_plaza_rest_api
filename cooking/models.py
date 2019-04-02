@@ -35,4 +35,4 @@ class Step(models.Model):
         return f'{self.order}: {self.step_text}'
 
     class Meta:
-        ordering = ['-order']
+        ordering = ['order']
