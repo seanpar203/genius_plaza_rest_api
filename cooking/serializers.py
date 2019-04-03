@@ -27,6 +27,32 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('user', 'name', 'steps', 'ingredients')
 
+    def update(self, instance, validated_data):
+        """ Custom update method to allow for updating Steps and Ingredients in a PUT request. """
+        steps_data = validated_data.pop('steps', None)
+        ingredients_data = validated_data.pop('ingredients', None)
+
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+
+        # If they passed `steps` we delete the previous & create new ones to ensure consistency.
+        if steps_data:
+            Step.objects.filter(recipe_id=instance.id).delete()
+
+            Step.objects.bulk_create([
+                Step(recipe_id=instance.id, **step) for step in steps_data
+            ])
+
+        # If they passed `ingredients` we delete the previous & create new ones to ensure consistency.
+        if ingredients_data:
+            Ingredient.objects.filter(recipe_id=instance.id).delete()
+
+            Ingredient.objects.bulk_create([
+                Ingredient(recipe_id=instance.id, **ingredient) for ingredient in ingredients_data
+            ])
+
+        return instance
+
     def create(self, validated_data):
         """ Custom create method to allow for adding Steps and Ingredients in a single post. """
         steps_data = validated_data.pop('steps', None)
